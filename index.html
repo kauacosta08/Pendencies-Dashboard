@@ -10,6 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
 
+  <!-- Supabase JS Client Oficial (CDN para sincronização em nuvem) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     /* ==========================================================================
        1. VARIÁVEIS CSS E DESIGN SYSTEM (Light / Dark)
@@ -314,6 +317,44 @@
     }
 
     .access-badge.readonly {
+      background: #FEF3C7;
+      color: #92400E;
+      border: 1px solid #FDE68A;
+    }
+
+    /* Badge de Sincronização em Nuvem (Supabase) */
+    .cloud-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .cloud-badge.online {
+      background: #EFF6FF;
+      color: #1D4ED8;
+      border: 1px solid #BFDBFE;
+    }
+
+    .cloud-badge.offline {
+      background: #F1F5F9;
+      color: #64748B;
+      border: 1px solid #CBD5E1;
+    }
+
+    .cloud-badge.error {
+      background: #FEF2F2;
+      color: #B91C1C;
+      border: 1px solid #FECACA;
+    }
+
+    .cloud-badge.syncing {
       background: #FEF3C7;
       color: #92400E;
       border: 1px solid #FDE68A;
@@ -1788,6 +1829,11 @@
         </div>
 
         <div class="topbar-right">
+          <!-- Indicador de Sincronização em Nuvem (Supabase) -->
+          <div id="cloud-sync-indicator" class="cloud-badge offline" title="Status da sincronização em nuvem. Clique para configurar.">
+            <span id="cloud-sync-text">💾 Modo Local</span>
+          </div>
+
           <!-- Indicador de Modo de Acesso (Admin / Consulta) -->
           <div id="access-mode-indicator" class="access-badge admin" title="Clique para alternar permissão">
             <span id="access-mode-text">🔓 Acesso Total</span>
@@ -2122,6 +2168,74 @@
               </div>
             </div>
 
+            <!-- CARD CONEXÃO EM NUVEM (SUPABASE) -->
+            <div id="card-supabase-settings" style="background: var(--bg-surface); border-radius: var(--radius-lg); padding: 24px; border: 1px solid var(--border-color); box-shadow: var(--card-shadow);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 40px; height: 40px; border-radius: 10px; background: #ECFDF5; border: 1px solid #A7F3D0; display: flex; align-items: center; justify-content: center; color: #059669; flex-shrink: 0;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 style="font-size: 1.1rem; font-weight: 700;">Conexão em Nuvem (Supabase &amp; Tempo Real)</h3>
+                    <p style="font-size: 0.84rem; color: var(--text-muted);">Sincronize todas as máquinas da revenda instantaneamente sem precisar passar arquivos</p>
+                  </div>
+                </div>
+                <div id="supabase-status-pill" class="cloud-badge offline">
+                  <span id="supabase-status-pill-text">⚪ Modo Local / Offline</span>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+                <div>
+                  <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 6px;">URL do Projeto Supabase (Project URL)</label>
+                  <input type="text" id="setting-supabase-url" class="form-input auth-restricted" placeholder="https://seu-projeto.supabase.co" autocomplete="off">
+                </div>
+
+                <div>
+                  <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 6px;">Chave de Acesso Pública (anon / public key)</label>
+                  <input type="password" id="setting-supabase-key" class="form-input auth-restricted" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." autocomplete="off">
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px;">
+                  <button class="btn btn-primary auth-restricted" id="btn-save-supabase">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    <span>Testar &amp; Conectar Nuvem</span>
+                  </button>
+
+                  <button class="btn btn-secondary auth-restricted" id="btn-upload-supabase" title="Envia todos os veículos cadastrados neste computador para a nuvem">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <span>Enviar Dados Locais para Nuvem</span>
+                  </button>
+
+                  <button class="btn btn-secondary auth-restricted" id="btn-download-supabase" title="Baixa todos os veículos da nuvem para este computador">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Baixar da Nuvem para o PC</span>
+                  </button>
+
+                  <button class="btn btn-secondary auth-restricted" id="btn-disconnect-supabase" style="color: #EF4444;">
+                    <span>Desconectar da Nuvem</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Box explicativo com script SQL para cópia rápida -->
+              <div style="background: var(--bg-surface-alt); border-radius: var(--radius-md); padding: 16px; margin-top: 18px; border: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 0.95rem;">📋</span>
+                    <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">Script SQL Oficial do Supabase:</span>
+                  </div>
+                  <button class="btn btn-secondary" id="btn-copy-sql" style="padding: 5px 12px; font-size: 0.78rem;">Copiar SQL Completo</button>
+                </div>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px;">
+                  Crie seu projeto gratuito em <strong>supabase.com</strong>, vá na barra lateral em <strong>SQL Editor</strong>, cole o código abaixo e clique em <strong>Run</strong>. Em seguida, copie a URL e a Anon Key em <strong>Project Settings &gt; API</strong> e salve acima.
+                </p>
+                <textarea id="supabase-sql-content" readonly style="width: 100%; height: 130px; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px; resize: vertical; outline: none;"></textarea>
+              </div>
+            </div>
+
             <div style="background: var(--bg-surface); border-radius: var(--radius-lg); padding: 24px; border: 1px solid var(--border-color); box-shadow: var(--card-shadow);">
               <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">Backup & Banco de Dados Local</h3>
               <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 20px;">Segurança dos dados das pendências automotivas</p>
@@ -2367,6 +2481,141 @@
     const STORAGE_KEY = 'autoflow_dealership_data';
     const AUTH_STORAGE_KEY = 'autoflow_auth_role';
     const ADMIN_PASSWORD = 'FinanceiroBerke2';
+    const SUPABASE_STORAGE_KEY = 'autoflow_supabase_config';
+    let supabaseClient = null;
+    let realtimeChannel = null;
+
+    const SUPABASE_INIT_SQL = `-- 1. Tabela de Pendências e Veículos da Revenda
+create table if not exists dealership_tasks (
+  id text primary key,
+  plate text,
+  vehicle text,
+  client text,
+  title text not null,
+  department text default 'detran',
+  status text not null default 'todo',
+  priority text default 'medium',
+  amount numeric default 0,
+  assignee_id text,
+  due_date text,
+  tags jsonb default '[]'::jsonb,
+  description text,
+  comments jsonb default '[]'::jsonb,
+  activity_log jsonb default '[]'::jsonb,
+  is_archived boolean default false,
+  archived_at timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now()),
+  updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- 2. Tabela de Colaboradores
+create table if not exists dealership_team (
+  id text primary key,
+  name text not null,
+  role text,
+  avatar text,
+  color text default '#2563EB',
+  is_self boolean default false
+);
+
+-- 3. Habilitar Segurança RLS com Acesso Livre via Chave Anon
+alter table dealership_tasks enable row level security;
+drop policy if exists "Acesso livre tarefas" on dealership_tasks;
+create policy "Acesso livre tarefas" on dealership_tasks for all using (true) with check (true);
+
+alter table dealership_team enable row level security;
+drop policy if exists "Acesso livre equipe" on dealership_team;
+create policy "Acesso livre equipe" on dealership_team for all using (true) with check (true);
+
+-- 4. Habilitar Sincronização em Tempo Real (Realtime)
+alter publication supabase_realtime add table dealership_tasks;
+alter publication supabase_realtime add table dealership_team;`;
+
+    function taskToRow(task, isArchived = false) {
+      return {
+        id: String(task.id),
+        plate: (task.plate || '').toUpperCase().trim(),
+        vehicle: task.vehicle || '',
+        client: task.client || '',
+        title: task.title || '',
+        department: task.department || 'detran',
+        status: (task.status === 'review' ? 'in_progress' : task.status) || 'todo',
+        priority: task.priority || 'medium',
+        amount: parseFloat(task.amount) || 0,
+        assignee_id: task.assigneeId || '',
+        due_date: task.dueDate || null,
+        tags: Array.isArray(task.tags) ? task.tags : [],
+        description: task.description || '',
+        comments: Array.isArray(task.comments) ? task.comments : [],
+        activity_log: Array.isArray(task.activityLog) ? task.activityLog : [],
+        is_archived: isArchived || !!task.archivedAt,
+        archived_at: task.archivedAt || null,
+        created_at: task.createdAt || new Date().toISOString(),
+        updated_at: task.updatedAt || new Date().toISOString()
+      };
+    }
+
+    function rowToTask(row) {
+      return {
+        id: String(row.id),
+        plate: (row.plate || 'SEM-PLACA').toUpperCase().trim(),
+        vehicle: row.vehicle || '',
+        client: row.client || 'Não informado',
+        title: row.title || '',
+        department: row.department || 'detran',
+        status: (row.status === 'review' ? 'in_progress' : row.status) || 'todo',
+        priority: row.priority || 'medium',
+        amount: parseFloat(row.amount) || 0,
+        assigneeId: row.assignee_id || '',
+        dueDate: row.due_date || '',
+        tags: Array.isArray(row.tags) ? row.tags : [],
+        description: row.description || '',
+        comments: Array.isArray(row.comments) ? row.comments : [],
+        activityLog: Array.isArray(row.activity_log) ? row.activity_log : [],
+        createdAt: row.created_at || new Date().toISOString(),
+        updatedAt: row.updated_at || new Date().toISOString(),
+        archivedAt: row.archived_at || null
+      };
+    }
+
+    function memberToRow(m) {
+      return {
+        id: String(m.id),
+        name: m.name || '',
+        role: m.role || '',
+        avatar: m.avatar || '',
+        color: m.color || '#2563EB',
+        is_self: !!m.isSelf
+      };
+    }
+
+    function rowToMember(r) {
+      return {
+        id: String(r.id),
+        name: r.name || '',
+        role: r.role || 'Colaborador',
+        avatar: r.avatar || '',
+        color: r.color || '#2563EB',
+        isSelf: !!r.is_self
+      };
+    }
+
+    function getSupabaseConfig() {
+      try {
+        const raw = localStorage.getItem(SUPABASE_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function saveSupabaseConfig(cfg) {
+      if (!cfg) {
+        localStorage.removeItem(SUPABASE_STORAGE_KEY);
+      } else {
+        localStorage.setItem(SUPABASE_STORAGE_KEY, JSON.stringify(cfg));
+      }
+    }
 
     // Estado do Acesso: 'admin' ou 'readonly'
     let currentAuthRole = sessionStorage.getItem(AUTH_STORAGE_KEY) || null;
@@ -2600,6 +2849,9 @@
         };
         this.data.tasks.unshift(newTask);
         this.save();
+        if (supabaseClient) {
+          supabaseClient.from('dealership_tasks').upsert(taskToRow(newTask, false)).catch(e => console.error(e));
+        }
         return newTask;
       }
 
@@ -2615,6 +2867,9 @@
 
         Object.assign(task, fields, { updatedAt: new Date().toISOString() });
         this.save();
+        if (supabaseClient) {
+          supabaseClient.from('dealership_tasks').upsert(taskToRow(task, false)).catch(e => console.error(e));
+        }
         return task;
       }
 
@@ -2623,6 +2878,9 @@
         if (idx !== -1) {
           this.data.tasks.splice(idx, 1);
           this.save();
+          if (supabaseClient) {
+            supabaseClient.from('dealership_tasks').delete().eq('id', id).catch(e => console.error(e));
+          }
           return true;
         }
         return false;
@@ -2636,6 +2894,9 @@
           task.activityLog.unshift({ text: `Veículo arquivado como entregue ao cliente`, timestamp: new Date().toISOString() });
           this.data.archived.unshift(task);
           this.save();
+          if (supabaseClient) {
+            supabaseClient.from('dealership_tasks').upsert(taskToRow(task, true)).catch(e => console.error(e));
+          }
           return task;
         }
         return null;
@@ -2651,6 +2912,9 @@
           task.activityLog.unshift({ text: `Veículo restaurado para "Pendentes"`, timestamp: new Date().toISOString() });
           this.data.tasks.unshift(task);
           this.save();
+          if (supabaseClient) {
+            supabaseClient.from('dealership_tasks').upsert(taskToRow(task, false)).catch(e => console.error(e));
+          }
           return task;
         }
         return null;
@@ -2669,6 +2933,12 @@
         task.comments.push(comment);
         task.updatedAt = new Date().toISOString();
         this.save();
+        if (supabaseClient) {
+          supabaseClient.from('dealership_tasks').update({
+            comments: task.comments,
+            updated_at: task.updatedAt
+          }).eq('id', taskId).catch(e => console.error(e));
+        }
         return comment;
       }
 
@@ -2682,6 +2952,9 @@
         };
         this.data.team.push(newMember);
         this.save();
+        if (supabaseClient) {
+          supabaseClient.from('dealership_team').upsert(memberToRow(newMember)).catch(e => console.error(e));
+        }
         return newMember;
       }
 
@@ -2697,6 +2970,9 @@
           if (t.assigneeId === id) t.assigneeId = selfUser.id;
         });
         this.save();
+        if (supabaseClient) {
+          supabaseClient.from('dealership_team').delete().eq('id', id).catch(e => console.error(e));
+        }
         return true;
       }
 
@@ -2777,6 +3053,272 @@
       const days = Math.floor(hours / 24);
       if (days === 1) return 'ontem';
       return `há ${days} dias`;
+    }
+
+    // ==========================================================================
+    // GERENCIADOR DE SINCRONIZAÇÃO EM NUVEM (SUPABASE CLOUD & REALTIME)
+    // ==========================================================================
+    function updateCloudSyncStatusUI(isConnected = false, message = null) {
+      const topbarBadge = document.getElementById('cloud-sync-indicator');
+      const topbarText = document.getElementById('cloud-sync-text');
+      const settingsPill = document.getElementById('supabase-status-pill');
+      const settingsPillText = document.getElementById('supabase-status-pill-text');
+
+      if (isConnected) {
+        if (topbarBadge) topbarBadge.className = 'cloud-badge online';
+        if (topbarText) topbarText.innerHTML = `☁️ Nuvem Ativa`;
+        if (settingsPill) settingsPill.className = 'cloud-badge online';
+        if (settingsPillText) settingsPillText.textContent = `🟢 Conectado ao Supabase (Tempo Real Ativo)`;
+      } else if (message) {
+        if (topbarBadge) topbarBadge.className = 'cloud-badge error';
+        if (topbarText) topbarText.innerHTML = `⚠️ Nuvem`;
+        if (settingsPill) settingsPill.className = 'cloud-badge error';
+        if (settingsPillText) settingsPillText.textContent = message;
+      } else {
+        if (topbarBadge) topbarBadge.className = 'cloud-badge offline';
+        if (topbarText) topbarText.innerHTML = `💾 Modo Local`;
+        if (settingsPill) settingsPill.className = 'cloud-badge offline';
+        if (settingsPillText) settingsPillText.textContent = `⚪ Modo Local / Offline`;
+      }
+    }
+
+    async function initSupabaseCloud(silent = false) {
+      const cfg = getSupabaseConfig();
+      const urlInput = document.getElementById('setting-supabase-url');
+      const keyInput = document.getElementById('setting-supabase-key');
+
+      if (urlInput && keyInput && cfg) {
+        urlInput.value = cfg.url || '';
+        keyInput.value = cfg.key || '';
+      }
+
+      if (!cfg || !cfg.url || !cfg.key) {
+        updateCloudSyncStatusUI(false);
+        return false;
+      }
+
+      if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+        console.warn("Biblioteca Supabase JS ainda não carregou do CDN.");
+        updateCloudSyncStatusUI(false, "⚠️ Carregando Supabase...");
+        return false;
+      }
+
+      try {
+        const rawUrl = (cfg.url || '').trim();
+        const cleanUrl = rawUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+        supabaseClient = window.supabase.createClient(cleanUrl, cfg.key.trim());
+
+        // Teste de conexão buscando 1 registro
+        const { data: testData, error: testErr } = await supabaseClient
+          .from('dealership_tasks')
+          .select('id')
+          .limit(1);
+
+        if (testErr) {
+          console.warn("Erro ao testar conexão Supabase:", testErr);
+          updateCloudSyncStatusUI(false, "⚠️ Erro: " + (testErr.message || "Tabela não encontrada"));
+          if (!silent) showToast("Erro no Supabase: " + testErr.message + ". Execute o SQL no painel!", "danger");
+          return false;
+        }
+
+        updateCloudSyncStatusUI(true);
+        if (!silent) showToast("Conectado ao Supabase com sucesso!", "success");
+
+        // Baixa dados mais recentes da nuvem
+        await downloadFromSupabase(true);
+
+        // Conecta ao Realtime
+        setupSupabaseRealtime();
+        return true;
+      } catch (err) {
+        console.error("Exceção ao conectar no Supabase:", err);
+        updateCloudSyncStatusUI(false, "⚠️ Erro de conexão");
+        return false;
+      }
+    }
+
+    function setupSupabaseRealtime() {
+      if (!supabaseClient) return;
+      if (realtimeChannel) {
+        supabaseClient.removeChannel(realtimeChannel);
+        realtimeChannel = null;
+      }
+
+      realtimeChannel = supabaseClient.channel('realtime_dealership')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'dealership_tasks' }, (payload) => {
+          handleRemoteTaskChange(payload);
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'dealership_team' }, (payload) => {
+          handleRemoteTeamChange(payload);
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            updateCloudSyncStatusUI(true);
+          }
+        });
+    }
+
+    function handleRemoteTaskChange(payload) {
+      const { eventType, new: newRow, old: oldRow } = payload;
+      if (eventType === 'INSERT') {
+        const task = rowToTask(newRow);
+        if (newRow.is_archived) {
+          if (!store.data.archived.some(t => t.id === task.id)) {
+            store.data.archived.unshift(task);
+          }
+        } else {
+          if (!store.data.tasks.some(t => t.id === task.id)) {
+            store.data.tasks.unshift(task);
+          }
+        }
+        store.save();
+        renderBoard();
+        renderArchive();
+        renderDashboard();
+        showToast(`☁️ Veículo ${task.plate || task.vehicle} sincronizado da nuvem!`, "info");
+      } else if (eventType === 'UPDATE') {
+        const task = rowToTask(newRow);
+        if (newRow.is_archived) {
+          store.data.tasks = store.data.tasks.filter(t => t.id !== task.id);
+          const aIdx = store.data.archived.findIndex(t => t.id === task.id);
+          if (aIdx !== -1) store.data.archived[aIdx] = task;
+          else store.data.archived.unshift(task);
+        } else {
+          store.data.archived = store.data.archived.filter(t => t.id !== task.id);
+          const tIdx = store.data.tasks.findIndex(t => t.id === task.id);
+          if (tIdx !== -1) store.data.tasks[tIdx] = task;
+          else store.data.tasks.unshift(task);
+        }
+        store.save();
+        renderBoard();
+        renderArchive();
+        renderDashboard();
+      } else if (eventType === 'DELETE') {
+        const id = oldRow.id;
+        store.data.tasks = store.data.tasks.filter(t => t.id !== id);
+        store.data.archived = store.data.archived.filter(t => t.id !== id);
+        store.save();
+        renderBoard();
+        renderArchive();
+        renderDashboard();
+      }
+    }
+
+    function handleRemoteTeamChange(payload) {
+      const { eventType, new: newRow, old: oldRow } = payload;
+      if (eventType === 'INSERT') {
+        const member = rowToMember(newRow);
+        if (!store.data.team.some(m => m.id === member.id)) {
+          store.data.team.push(member);
+          store.save();
+          renderTeam();
+          populateFilterOptions();
+        }
+      } else if (eventType === 'UPDATE') {
+        const member = rowToMember(newRow);
+        const idx = store.data.team.findIndex(m => m.id === member.id);
+        if (idx !== -1) {
+          store.data.team[idx] = member;
+          store.save();
+          renderTeam();
+          populateFilterOptions();
+        }
+      } else if (eventType === 'DELETE') {
+        store.data.team = store.data.team.filter(m => m.id !== oldRow.id);
+        store.save();
+        renderTeam();
+        populateFilterOptions();
+      }
+    }
+
+    async function uploadToSupabase() {
+      if (!supabaseClient) {
+        showToast("Supabase não conectado. Configure as credenciais.", "warning");
+        return;
+      }
+
+      showToast("Enviando dados locais para a nuvem...", "info");
+
+      try {
+        const taskRows = [
+          ...store.data.tasks.map(t => taskToRow(t, false)),
+          ...store.data.archived.map(t => taskToRow(t, true))
+        ];
+
+        if (taskRows.length > 0) {
+          const { error: tErr } = await supabaseClient
+            .from('dealership_tasks')
+            .upsert(taskRows, { onConflict: 'id' });
+          if (tErr) throw tErr;
+        }
+
+        const teamRows = store.data.team.map(m => memberToRow(m));
+        if (teamRows.length > 0) {
+          const { error: teamErr } = await supabaseClient
+            .from('dealership_team')
+            .upsert(teamRows, { onConflict: 'id' });
+          if (teamErr) throw teamErr;
+        }
+
+        showToast(`Sucesso! ${taskRows.length} veículos sincronizados na nuvem!`, "success");
+      } catch (err) {
+        console.error("Erro no upload para Supabase:", err);
+        showToast("Erro ao enviar para nuvem: " + err.message, "danger");
+      }
+    }
+
+    async function downloadFromSupabase(silent = false) {
+      if (!supabaseClient) return;
+
+      try {
+        const { data: tasks, error: tErr } = await supabaseClient
+          .from('dealership_tasks')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (tErr) throw tErr;
+
+        if (tasks && tasks.length > 0) {
+          const activeTasks = [];
+          const archivedTasks = [];
+          tasks.forEach(r => {
+            const task = rowToTask(r);
+            if (r.is_archived) archivedTasks.push(task);
+            else activeTasks.push(task);
+          });
+
+          store.data.tasks = activeTasks;
+          store.data.archived = archivedTasks;
+        }
+
+        const { data: team, error: teamErr } = await supabaseClient
+          .from('dealership_team')
+          .select('*');
+
+        if (!teamErr && team && team.length > 0) {
+          const selfMember = store.getSelfMember();
+          const mappedTeam = team.map(r => rowToMember(r));
+          if (selfMember) {
+            const found = mappedTeam.find(m => m.name.toLowerCase() === selfMember.name.toLowerCase());
+            if (found) found.isSelf = true;
+          }
+          store.data.team = mappedTeam;
+        }
+
+        store.save();
+        renderBoard();
+        renderArchive();
+        renderDashboard();
+        renderTeam();
+        populateFilterOptions();
+
+        if (!silent) {
+          showToast("Dados da nuvem baixados e atualizados!", "success");
+        }
+      } catch (err) {
+        console.error("Erro ao baixar da nuvem:", err);
+        if (!silent) showToast("Erro ao baixar dados da nuvem: " + err.message, "danger");
+      }
     }
 
     // ==========================================================================
@@ -3605,10 +4147,17 @@
       document.getElementById('sidebar-user-avatar').textContent = selfUser.name[0].toUpperCase();
       document.getElementById('setting-user-name-input').value = selfUser.name;
 
+      // Popula Script SQL no Settings
+      const sqlEl = document.getElementById('supabase-sql-content');
+      if (sqlEl) sqlEl.value = SUPABASE_INIT_SQL;
+
       populateFilterOptions();
       setupDragAndDropColumns();
       checkAuthUI();
       renderDashboard();
+
+      // Inicializa Conexão Supabase se já configurado
+      initSupabaseCloud(true);
     }
 
     // ==========================================================================
@@ -3719,6 +4268,96 @@
           store.resetData();
           initApp();
           showToast("Lote de demonstração restaurado!", "info");
+        }
+      });
+
+      // ========================================================================
+      // SUPABASE CONEXÃO & SINCRONIZAÇÃO EM NUVEM EVENTOS
+      // ========================================================================
+      document.getElementById('cloud-sync-indicator').addEventListener('click', () => {
+        const settingsNavItem = document.querySelector('.nav-item[data-view="settings"]');
+        if (settingsNavItem) settingsNavItem.click();
+        const card = document.getElementById('card-supabase-settings');
+        if (card) card.scrollIntoView({ behavior: 'smooth' });
+      });
+
+      document.getElementById('btn-copy-sql').addEventListener('click', () => {
+        const sqlText = document.getElementById('supabase-sql-content').value;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(sqlText).then(() => {
+            showToast("Script SQL copiado com sucesso! Cole no SQL Editor do Supabase.", "success");
+          }).catch(() => {
+            copyFallbackSql();
+          });
+        } else {
+          copyFallbackSql();
+        }
+      });
+
+      function copyFallbackSql() {
+        const ta = document.getElementById('supabase-sql-content');
+        ta.select();
+        document.execCommand('copy');
+        showToast("Script SQL copiado! Cole no SQL Editor do Supabase.", "success");
+      }
+
+      document.getElementById('btn-save-supabase').addEventListener('click', async () => {
+        if (currentAuthRole === 'readonly') return;
+        let url = document.getElementById('setting-supabase-url').value.trim();
+        const key = document.getElementById('setting-supabase-key').value.trim();
+
+        if (!url || !key) {
+          showToast("Informe a URL e a Chave Anon do seu projeto Supabase.", "warning");
+          return;
+        }
+
+        url = url.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+        document.getElementById('setting-supabase-url').value = url;
+        saveSupabaseConfig({ url, key });
+        showToast("Conectando ao Supabase...", "info");
+        const success = await initSupabaseCloud(false);
+        if (success) {
+          if (store.data.tasks.length > 0) {
+            if (confirm(`Conexão com a nuvem estabelecida com sucesso! Deseja enviar os ${store.data.tasks.length} veículos deste computador para o Supabase agora?`)) {
+              await uploadToSupabase();
+            }
+          }
+        }
+      });
+
+      document.getElementById('btn-upload-supabase').addEventListener('click', async () => {
+        if (currentAuthRole === 'readonly') return;
+        if (!supabaseClient) {
+          showToast("Conecte ao Supabase primeiro antes de sincronizar.", "warning");
+          return;
+        }
+        await uploadToSupabase();
+      });
+
+      document.getElementById('btn-download-supabase').addEventListener('click', async () => {
+        if (currentAuthRole === 'readonly') return;
+        if (!supabaseClient) {
+          showToast("Conecte ao Supabase primeiro antes de baixar os dados.", "warning");
+          return;
+        }
+        if (confirm("Isso atualizará os veículos deste computador com as informações mais recentes da nuvem. Continuar?")) {
+          await downloadFromSupabase(false);
+        }
+      });
+
+      document.getElementById('btn-disconnect-supabase').addEventListener('click', () => {
+        if (currentAuthRole === 'readonly') return;
+        if (confirm("Deseja desconectar da nuvem? O sistema voltará a salvar os dados somente neste computador (Modo Local).")) {
+          saveSupabaseConfig(null);
+          if (realtimeChannel && supabaseClient) {
+            supabaseClient.removeChannel(realtimeChannel);
+            realtimeChannel = null;
+          }
+          supabaseClient = null;
+          document.getElementById('setting-supabase-url').value = '';
+          document.getElementById('setting-supabase-key').value = '';
+          updateCloudSyncStatusUI(false);
+          showToast("Desconectado da nuvem. Operando em Modo Local.", "info");
         }
       });
 

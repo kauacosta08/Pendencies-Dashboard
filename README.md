@@ -2,4 +2,5 @@
 Dashboard de pendencias usando Google Antigravity
 
 
-senha supabase: TQvFsT8I7hmfcj4b
+**PARA ACESSAR VIA NUVEM LINK ABAIXO**
+https://live-notebook-weave.lovable.app/autoflow.html
